@@ -1,0 +1,60 @@
+#!/bin/bash
+# $1 prefix
+# $2 arch
+# $3 version
+# $4+ exe
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <bottle> <arch> <version> <executable>"
+    exit 1
+fi
+
+BASE_PREFIX="$HOME/.local/wine"
+WINEPREFIX="${BASE_PREFIX}/${1}"
+LOGFILE="${WINEPREFIX}/wine.out"
+
+WINEARCH="${2}"
+if [[ $WINEARCH == 32 || $WINEARCH == 64 ]]; then
+    WINEARCH="win$WINEARCH"
+fi
+
+if [ -d "/opt/wine/wine-${3}" ]; then
+    wine_path="/opt/wine/wine-${3}"
+else
+    wine_path=/usr
+fi
+
+PATH=$wine_path/bin:$PATH
+LD_LIBRARY_PATH="$wine_path/lib:$LD_LIBRARY_PATH"
+WINEDLLPATH=$wine_path/lib/wine
+if [[ $WINEARCH == "win64" ]]; then
+    LD_LIBRARY_PATH="$wine_path/lib32:$LD_LIBRARY_PATH"
+else
+    WINEDLLPATH=$wine_path/lib32/wine
+fi
+WINEVERPATH=$wine_path
+WINESERVER=$wine_path/bin/wineserver
+WINELOADER=$wine_path/bin/wine
+
+if [ -z ${WINEDEBUG} ]; then
+    WINEDEBUG="-all"
+fi
+if [ -z ${NINEDEBUG} ]; then
+    NINEDEBUG="-all"
+fi
+
+export PATH LD_LIBRARY_PATH WINEVERPATH WINEPREFIX WINEARCH WINESERVER WINELOADER WINEDLLPATH WINEDEBUG NINEDEBUG
+
+if [ -z ${LD_PRELOAD} ]; then
+    export LD_PRELOAD
+fi
+
+shift 3
+if [ "${1}" == "winetricks" ]; then
+    shift
+    winetricks "${@}"
+else
+    #env > $LOGFILE
+    $WINELOADER "${@}" #>> $LOGFILE 2>&1
+fi
+
+exit 0
