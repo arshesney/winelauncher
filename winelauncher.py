@@ -21,82 +21,90 @@ config_file = xdg_config_home + '/winelauncher.conf'
 # Command line arguments
 #
 parser = argparse.ArgumentParser(
-        description="winelauncher command line arguments")
-parser.add_argument("-c", "--config", help="Alternate config file")
-parser.add_argument("-p", "--prefix", help="WINEPREFIX")
-parser.add_argument("-a", "--arch", help="WINEARCH (32 or 64 bit)")
-parser.add_argument("-w", "--wine", help="WINE version")
-parser.add_argument("-d", "--wine-dir", help="WINE directory")
-parser.add_argument("-l", "--list", help="List WINE versions available")
+    description="%(prog)s: a WINE wrapper to handle multiple prefixes")
+parser.add_argument("-c", "--config",
+                    help="alternate config file")
+parser.add_argument("-p", "--prefix",
+                    help="set WINEPREFIX")
+parser.add_argument("-a", "--arch",
+                    help="set WINEARCH (32 or 64 bit)")
+parser.add_argument("-w", "--wine",
+                    help="WINE version")
+parser.add_argument("-d", "--winedir",
+                    help="set WINE base directory")
+parser.add_argument("-l", "--list",
+                    help="list WINE versions available",
+                    action="store_true")
+parser.add_argument("-s", "--save",
+                    help="save configuration",
+                    action="store_true")
 
+# Parse command line arguments: config_file first, other values will
+# override conf settings after reading config_file
 args = parser.parse_args()
-
-if args.config:
-    config_file = args.config
-
-if args.prefix:
-    prefix = args.prefix
-else:
-    prefix = None
-
-if args.wine:
-    wine_version = args.wine
+config_file = args.config if args.config else config_file
 
 # Read config file or generate a default one if file doesn't exists
 config_p = pathlib.Path(config_file)
-if config_p.exists() and config_p.is_file():
-    config = configparser.BasicInterpolation()
-    config.read(config_file)
-else:
-    try:
-        with config_p.open(mode='w') as newfile:
-            newfile.write("""\
-[general]
-prefix_path = %(my_dir)s/.local/wineprefixes
-wine_dir = /opt/wine
+config = configparser.ConfigParser()
+config['general'] = {
+    'prefix_path': '%(my_dir)s/.local/wineprefixes',
+    'wine_dir': '/opt/wine'
+}
+config['logging'] = {
+    'log': 'syslog',
+    'log_level': 'info',
+    'wine_debug': '-all',
+    'nine_debug': '-all'
+}
+config.read(config_file)
 
-[logging]
-log = syslog
-log_level = info
-wine_debug = -all
-nine_debug = -all
-                    """)
-            print("Generated a new config file at {}".format(config_file))
-            sys.exit(0)
+# Other comman line arguments
+prefix = args.prefix if args.prefix else None
+wine_arch = args.arch if args.arch else None
+wine_version = args.wine if args.wine else None
+wine_dir = args.winedir if args.winedir else config.get('general', 'wine_dir')
+
+if prefix:
+    config[prefix] = {
+    }
+
+if args.save:
+    try:
+        with open(config_file, mode='w') as newfile:
+            config.write(newfile)
+        print("Saved config file {}".format(config_file))
+        sys.exit(0)
     except OSError as err:
         print("Cannot open file {}".format(config_file))
         print("OSError: {0}".format(err))
-
-if args.wine-dir:
-    wine_dir = args.wine-dir
-else:
-    wine_dir = config.get('general', 'wine_dir')
 
 
 #
 # List WINE versions installed
 #
-if pathlib.Path(wine_dir):
+system_wine = pathlib.Path('/usr/bin/wine')
+if system_wine.is_file():
+    system_wine_version = str(subprocess.check_output(
+        ['/usr/bin/wine', '--version']), 'utf-8')
+else:
+    system_wine = None
+
+if pathlib.Path(wine_dir).exists():
     wine_versions_list = os.listdir(wine_dir)
-    system_wine = pathlib.Path('/usr/bin/wine')
-    if system_wine.is_file():
-        system_wine_version = str(subprocess.check_output(
-            ['/usr/bin/wine', '--version']), 'utf-8')
-    else:
-        system_wine = None
 else:
     wine_versions_list = None
 
 if system_wine or wine_versions_list:
     if system_wine:
-        print("System WINE version: {}".format(system_wine_version))
+        print("System WINE version:\n\t{}".format(system_wine_version))
     else:
-        print("No system-wine WINE found")
+        print("No system-wine WINE found\n")
 
     if wine_versions_list:
-        print("WINE versions available in {}:".format(wine_dir))
+        print("WINE versions available in {}:\n\n".format(wine_dir))
         for winedir in wine_versions_list:
-            print("{}".format(winedir))
+            print("\t{}".format(winedir))
     else:
         print("No additional WINE installs available")
     sys.exit(0)
@@ -140,3 +148,16 @@ else:
         print("OSError: {0}".format(err))
 
 logger.debug("Logger initialized.")
+
+
+#
+# Read current environment and preapre WINE specific one
+#
+current_env_path = os.environ.get('PATH', default=None)
+current_env_ldpreload = os.environ.get('LD_PRELOAD', default=None)
+current_env_winedebug = os.environ.get('WINEDEBUG', default='-all')
+current_env_ninedebug = os.environ.get('NINEDEBUG', default='-all')
+
+wine_prefix = prefix_path + "/" + prefix if prefix else None
+launcher_env = {}
+
