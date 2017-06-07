@@ -14,87 +14,98 @@ from systemd.journal import JournalHandler
 #
 # DEFAULTS
 #
-config_file = xdg_config_home + "/winelauncher.conf"
+config = configparser.ConfigParser(default_section="general")
 home_dir = os.path.expanduser("~")
+config['general'] = {
+    "prefix_base": xdg_data_home + "/wineprefixes",
+    "wine_dir": "/opt/wine",
+    "wine_lib32": "lib32",
+    "wine_lib64": "lib",
+    "wine_debug": "-all",
+    "nine_debug": "-all"
+}
+config['logging'] = {
+    "log_dest": "syslog",
+    "log_level": "info"
+}
 
 
 #
 # Command line arguments
 #
-parser = argparse.ArgumentParser(
+# Handle an explicit config file
+config_parser = argparse.ArgumentParser(
     description="%(prog)s: a WINE wrapper to handle multiple prefixes",
     epilog="%(prog)s will forward LD_PRELOAD, \
-            WINEDEBUG and NINEDEBUG environment variables to WINE")
-parser.add_argument("-c", "--config",
-                    help="alternate config file")
+            WINEDEBUG and NINEDEBUG environment variables to WINE",
+    add_help=False)
+config_parser.add_argument("-c", "--config",
+                           help="alternate config file",
+                           default=xdg_config_home + "/winelauncher.conf",
+                           dest='config_file',
+                           metavar="FILE")
+args, remaining_argv = config_parser.parse_known_args()
+
+if pathlib.Path(args.config_file) and config.read(args.config_file):
+    print("Using configuration from {}".format(args.config_file))
+else:
+    try:
+        with open(args.config_file, mode="w") as newfile:
+            config.write(newfile)
+        print("Saved default config file {}".format(args.config_file))
+        sys.exit(0)
+    except OSError as err:
+        print("Cannot open file {}".format(args.config_file))
+        print("OSError: {0}".format(err))
+
+# General section arguments override
+general_parser = argparse.ArgumentParser(parents=[config_parser],
+                                         description=__doc__,
+                                         add_help=False)
+general_parser.set_defaults(**config['general'])
+general_parser.add_argument("-b", "--base",
+                            help="prefixes base directory")
+general_parser.add_argument("-d", "--wine-dir",
+                            help="set WINE base directory")
+args, remaining_argv = general_parser.parse_known_args(remaining_argv)
+
+logging_parser = argparse.ArgumentParser(parents=[general_parser],
+                                         description=__doc__,
+                                         add_help=False)
+logging_parser.set_defaults(**config['logging'])
+logging_parser.add_argument("-L", "--log-level",
+                            help="ste log level",
+                            default="info")
+logging_parser.add_argument("-o", "--log-output",
+                            help="output to log file (or syslog)")
+args, remaining_argv = logging_parser.parse_known_args(remaining_argv)
+
+parser = argparse.ArgumentParser(parents=[logging_parser],
+                                 description=__doc__)
+parser.add_argument("-w", "--wine-version",
+                    default='system',
+                    help="WINE version")
 parser.add_argument("-p", "--prefix",
-                    help="WINEPREFIX name (will be appended to prefix_base)")
-parser.add_argument("-b", "--base",
-                    help="prefixes base directory")
-parser.add_argument("-a", "--arch",
+                    help="WINEPREFIX name (will be appended to prefix_base)",
+                    default=None)
+parser.add_argument("-a", "--wine-arch",
                     help="set WINEARCH (32 or 64 bit)",
                     choices=["32", "64"])
-parser.add_argument("-w", "--wine",
-                    help="WINE version")
-parser.add_argument("-d", "--winedir",
-                    help="set WINE base directory")
-parser.add_argument("-L", "--loglevel",
-                    help="ste log level",
-                    default="info")
-parser.add_argument("-o", "--logoutput",
-                    help="output to log file (or syslog)")
 parser.add_argument("-l", "--list",
                     help="list WINE versions available",
                     action="store_true")
-parser.add_argument("winecommand", nargs='+',
+parser.add_argument("winecommand", nargs='*',
                     help="command to forward to WINE")
 
 # Parse command line arguments: will override config_file values
-args = parser.parse_args()
-config_file = args.config if args.config else config_file
-
-# Read config file or generate a default one it doesn't exists
-config = configparser.ConfigParser()
-if pathlib.Path(config_file) and config.read(config_file):
-    print("Using configuration from {}".format(config_file))
-else:
-    config["general"] = {
-        "prefix_base": xdg_data_home + "/wineprefixes",
-        "wine_dir": "/opt/wine",
-        "wine_lib32": "lib32",
-        "wine_lib64": "lib",
-        "wine_debug": "-all",
-        "nine_debug": "-all"
-    }
-    config["logging"] = {
-        "log": "syslog",
-        "log_level": "info"
-    }
-    try:
-        with open(config_file, mode="w") as newfile:
-            config.write(newfile)
-        print("Saved default config file {}".format(config_file))
-        sys.exit(0)
-    except OSError as err:
-        print("Cannot open file {}".format(config_file))
-        print("OSError: {0}".format(err))
-
-# Other comman line arguments
-prefix = args.prefix if args.prefix else None
-prefix_base = args.base if args.base else config.get("general", "prefix_base")
-wine_arch = args.arch if args.arch else None
-wine_version = args.wine if args.wine else None
-wine_dir = args.winedir if args.winedir else config.get("general", "wine_dir")
-log_level = args.loglevel if args.loglevel \
-        else config.get("logging", "log_level")
-log_dest = args.logoutput if args.logoutput else config.get("logging", "log")
-winecommand = args.winecommand
+args = parser.parse_args(remaining_argv)
+print("Args: {}".format(args))
 
 
 #
 # List WINE versions installed
 #
-if args.list:
+if args.list or not args.winecommand:
     system_wine = pathlib.Path("/usr/bin/wine")
     if system_wine.is_file():
         system_wine_version = str(subprocess.check_output(
@@ -102,8 +113,8 @@ if args.list:
     else:
         system_wine = None
 
-    if pathlib.Path(wine_dir).exists():
-        wine_versions_list = os.listdir(wine_dir)
+    if pathlib.Path(args.wine_dir).exists():
+        wine_versions_list = os.listdir(args.wine_dir)
     else:
         wine_versions_list = None
 
@@ -114,7 +125,7 @@ if args.list:
             print("No system-wine WINE found\n")
 
         if wine_versions_list:
-            print("WINE versions available in {}:\n\n".format(wine_dir))
+            print("WINE versions available in {}:\n\n".format(args.wine_dir))
             for winedir in wine_versions_list:
                 print("\t{}".format(winedir))
         else:
@@ -140,17 +151,18 @@ def set_log_level(level):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(set_log_level(log_level))
+logger.setLevel(set_log_level(args.log_level))
 
-if log_dest == "syslog":
-    logger.addHandler(JournalHandler(SYSLOG_IDENTIFIER=prefix))
+if args.log_dest == "syslog":
+    syslog_tag = args.prefix if args.prefix else 'wine'
+    logger.addHandler(JournalHandler(SYSLOG_IDENTIFIER=syslog_tag))
 else:
     try:
-        log_handler = logging.handlers.FileHandler(log_dest)
+        log_handler = logging.handlers.FileHandler(args.log_dest)
         log_handler.setFormatter("%(asctime)s %(levelname)-8s %(message)s")
         logger.addHandler(log_handler)
     except OSError as err:
-        print("Cannot open file {}".format(log_dest))
+        print("Cannot open file {}".format(args.log_dest))
         print("OSError: {0}".format(err))
 
 logger.debug("Logger initialized.")
@@ -165,8 +177,9 @@ current_env_ldlibpath = os.environ.get("LD_LIBRARY_PATH", default="")
 current_env_winedebug = os.environ.get("WINEDEBUG")
 current_env_ninedebug = os.environ.get("NINEDEBUG")
 
-wine_prefix = prefix_base + "/" + prefix if prefix else None
-wine_env_ldlibpath = "LD_LIBRARY_PATH="
+wine_prefix = args.prefix_base + "/" + args.prefix if args.prefix else \
+        home_dir + "/" + ".wine"
+# wine_env_ldlibpath = "LD_LIBRARY_PATH="
 
 # Populating environment
 launcher_env = []
@@ -184,17 +197,16 @@ if current_env_ninedebug:
 else:
     wine_env_ninedebug = "NINEDEBUG=" + config.get("general", "nine_debug")
 
-if wine_prefix:
-    wine_env_prefix = "WINEPREFIX=" + wine_prefix
+wine_env_prefix = "WINEPREFIX=" + wine_prefix
 
-if wine_version:
-    wine_path = wine_dir
-    wine_env_path = "PATH=" + wine_dir + ":" + current_env_path
-else:
+if args.wine_version == "system":
     wine_path = "/usr"
     wine_env_path = "PATH=" + current_env_path
+else:
+    wine_path = args.wine_dir
+    wine_env_path = "PATH=" + args.wine_dir + ":" + current_env_path
 
-if wine_arch == "32":
+if args.wine_arch == "32":
     wine_env_ldlibpath = "LD_LIBRARY_PATH=" + \
         wine_path + "/" + \
         config.get("general", "wine_lib32") + ":" + \
@@ -220,8 +232,7 @@ wine_env_loader = wine_path + "/bin/wine"
 
 launcher_env.append(wine_env_ldlibpath)
 launcher_env.append(wine_env_path)
-if wine_env_prefix:
-    launcher_env.append(wine_env_prefix)
+launcher_env.append(wine_env_prefix)
 launcher_env.append(wine_env_arch)
 launcher_env.append(wine_env_server)
 launcher_env.append(wine_env_loader)
@@ -230,6 +241,6 @@ launcher_env.append(wine_env_winedebug)
 launcher_env.append(wine_env_ninedebug)
 
 print("Env:\n{}".format(launcher_env))
-print("Command to run: {}".format(winecommand))
+print("Command to run: {}".format(args.winecommand))
 
 sys.exit(0)
