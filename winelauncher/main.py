@@ -1,9 +1,57 @@
-import logging
-import logging.handlers
-import configparser
-import pathlib
-import sys
 import os
+import pathlib
 import subprocess
-from xdg.BaseDirectory import xdg_config_home, xdg_data_home
-from systemd.journal import JournalHandler
+import sys
+
+from args import parser
+
+args = None
+
+
+def read_command_args():
+    """ Read arguments from command line """
+    global args
+    arglist = sys.argv[1:]
+
+    args = parser.parse_args(arglist)
+
+
+def list_wine_versions():
+    """ Find installed WINE versions """
+    system_wine = pathlib.Path("/usr/bin/wine")
+    if system_wine.is_file():
+        system_wine_version = str(subprocess.check_output(
+            ["/usr/bin/wine", "--version"]), "utf-8")
+    else:
+        system_wine = None
+
+    if pathlib.Path(args.wine_dir).exists():
+        wine_versions_list = os.listdir(args.wine_dir)
+    else:
+        wine_versions_list = None
+
+    if system_wine or wine_versions_list:
+        if system_wine:
+            print("System WINE version:\n\t{}".format(system_wine_version))
+        else:
+            print("No system-wine WINE found\n")
+
+        if wine_versions_list:
+            print("WINE versions available in {}:\n\n".format(args.wine_dir))
+            for winedir in wine_versions_list:
+                print("\t{}".format(winedir))
+        else:
+            print("No additional WINE installs available")
+    else:
+        print("No WINE found")
+        sys.exit(1)
+
+
+def main():
+    read_command_args()
+    print("Args: {}".format(args))
+
+    if not args.winecommand or args.list:
+        list_wine_versions()
+
+    sys.exit(0)

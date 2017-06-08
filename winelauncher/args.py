@@ -1,42 +1,59 @@
 import argparse
-import pathlib
-import os
-
-import configfile
 
 from textwrap import dedent
 from xdg.BaseDirectory import xdg_config_home, xdg_data_home
 
-config_parser = argparse.ArgumentParser(
+parser = argparse.ArgumentParser(
     description="%(prog)s: a WINE wrapper to handle multiple prefixes",
     epilog=dedent("""
         %(prog)s will forward LD_PRELOAD, \
         WINEDEBUG and NINEDEBUG environment variables to WINE
         """))
 
-config_parser.add_argument(
+configfile = parser.add_argument_group("Config options")
+configfile.add_argument(
     "-c", "--config",
     help="alternate config file",
     default=xdg_config_home + "/winelauncher.conf",
     dest='config_file',
     metavar="FILE")
-args, remaining_argv = config_parser.parse_known_args()
 
-if pathlib.Path(args.config_file) and config.read(args.config_file):
-    print("Using configuration from {}".format(args.config_file))
-else:
-    try:
-        with open(args.config_file, mode="w") as newfile:
-            config.write(newfile)
-        print("Saved default config file {}".format(args.config_file))
-        sys.exit(0)
-    except OSError as err:
-        print("Cannot open file {}".format(args.config_file))
-        print("OSError: {0}".format(err))
-
-parser = argparse.ArgumentParser(
-    parents=[config_parser],
-    description=__doc__)
-
+# WINE and prefixes locations
 general = parser.add_argument_group("WINE options")
-general.set_defaults(**config['general'])
+general.add_argument("--prefix-base",
+                     default=xdg_data_home + "/wineprefixes",
+                     help="prefixes base directory")
+general.add_argument("--wine-base",
+                     default="/opt/wine",
+                     help="set WINE base directory")
+general.add_argument("--wine-lib32",
+                     default="lib32",
+                     help="lib directory for 32 bit libraries")
+general.add_argument("--wine-lib64",
+                     default="lib",
+                     help="lib directory for 64 bit libraries")
+
+# Logger options
+logger = parser.add_argument_group("Logger options")
+logger.add_argument("--log-level",
+                    help="set log level",
+                    default="info")
+logger.add_argument("--log-output",
+                    default="journal",
+                    help="output to log file (or journal)")
+
+# General WINE options
+parser.add_argument("--wine-version",
+                    default='system',
+                    help="WINE version")
+parser.add_argument("--prefix",
+                    help="WINEPREFIX name (will be appended to prefix_base)",
+                    default=None)
+parser.add_argument("--wine-arch",
+                    help="set WINEARCH (32 or 64 bit)",
+                    choices=["32", "64"])
+parser.add_argument("--list",
+                    help="list WINE versions available",
+                    action="store_true")
+parser.add_argument("winecommand", nargs='*',
+                    help="command to forward to WINE")
