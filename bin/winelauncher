@@ -1,0 +1,4 @@
+#!/bin/bash
+
+BINPATH=$(basename $0)
+/usr/bin/env python3 "$BINPATH/../winelauncher/main.py" $@

@@ -1,7 +1,11 @@
 import argparse
+import pathlib
 import os
 
+import configfile
+
 from textwrap import dedent
+from xdg.BaseDirectory import xdg_config_home, xdg_data_home
 
 config_parser = argparse.ArgumentParser(
     description="%(prog)s: a WINE wrapper to handle multiple prefixes",
