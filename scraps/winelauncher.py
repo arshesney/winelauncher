@@ -39,11 +39,12 @@ config_parser = argparse.ArgumentParser(
     epilog="%(prog)s will forward LD_PRELOAD, \
             WINEDEBUG and NINEDEBUG environment variables to WINE",
     add_help=False)
-config_parser.add_argument("-c", "--config",
-                           help="alternate config file",
-                           default=xdg_config_home + "/winelauncher.conf",
-                           dest='config_file',
-                           metavar="FILE")
+config_parser.add_argument(
+    "-c", "--config",
+    help="alternate config file",
+    default=xdg_config_home + "/winelauncher.conf",
+    dest='config_file',
+    metavar="FILE")
 args, remaining_argv = config_parser.parse_known_args()
 
 if pathlib.Path(args.config_file) and config.read(args.config_file):
