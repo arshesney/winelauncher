@@ -4,9 +4,9 @@ from textwrap import dedent
 from xdg.BaseDirectory import xdg_config_home, xdg_data_home
 
 parser = argparse.ArgumentParser(
-    description="%(prog)s: a WINE wrapper to handle multiple prefixes",
+    description="winelauncher: a WINE wrapper to handle multiple prefixes",
     epilog=dedent("""
-        %(prog)s will forward LD_PRELOAD, \
+        winelauncher will forward LD_PRELOAD, \
         WINEDEBUG and NINEDEBUG environment variables to WINE
         """))
 

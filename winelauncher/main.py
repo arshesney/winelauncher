@@ -25,8 +25,8 @@ def list_wine_versions():
     else:
         system_wine = None
 
-    if pathlib.Path(args.wine_dir).exists():
-        wine_versions_list = os.listdir(args.wine_dir)
+    if pathlib.Path(args.wine_base).exists():
+        wine_versions_list = os.listdir(args.wine_base)
     else:
         wine_versions_list = None
 
@@ -37,7 +37,7 @@ def list_wine_versions():
             print("No system-wine WINE found\n")
 
         if wine_versions_list:
-            print("WINE versions available in {}:\n\n".format(args.wine_dir))
+            print("WINE versions available in {}:\n\n".format(args.wine_base))
             for winedir in wine_versions_list:
                 print("\t{}".format(winedir))
         else:
@@ -55,3 +55,6 @@ def main():
         list_wine_versions()
 
     sys.exit(0)
+
+if __name__ == "__main__":
+    main()
