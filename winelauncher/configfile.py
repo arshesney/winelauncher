@@ -12,11 +12,11 @@ config['general'] = {
     "wine_dir": "/opt/wine",
     "wine_lib32": "lib32",
     "wine_lib64": "lib",
-    "wine_debug": "-all",
-    "nine_debug": "-all"
+    "wine_debug": "fixme-all",
+    "nine_debug": "fixme-all"
 }
 config['logging'] = {
-    "log_dest": "syslog",
+    "log_dest": "console",
     "log_level": "info"
 }
 

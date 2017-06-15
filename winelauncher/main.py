@@ -2,10 +2,11 @@ import os
 import pathlib
 import subprocess
 import sys
+import logger
 
 from args import parser
 
-args = None
+args = log = None
 
 
 def read_command_args():
@@ -49,12 +50,16 @@ def list_wine_versions():
 
 def main():
     read_command_args()
-    print("Args: {}".format(args))
+    syslog_tag = args.prefix if args.prefix else 'wine'
+    log = logger.logger_init(syslog_tag, args.log_output, args.log_level)
+    log.debug("Logger initialized.")
+    log.info("Args: {}".format(args))
 
     if not args.winecommand or args.list:
         list_wine_versions()
 
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

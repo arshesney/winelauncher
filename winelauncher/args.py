@@ -39,7 +39,7 @@ logger.add_argument("--log-level",
                     help="set log level",
                     default="info")
 logger.add_argument("--log-output",
-                    default="journal",
+                    default="console",
                     help="output to log file (or journal)")
 
 # General WINE options
