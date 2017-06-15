@@ -4,18 +4,10 @@ import subprocess
 import sys
 import logger
 
-from args import parser
+from args import parser, config
 
 args = log = None
 wine_env = {}
-
-
-def read_command_args():
-    """ Read arguments from command line """
-    global args
-    arglist = sys.argv[1:]
-
-    args = parser.parse_args(arglist)
 
 
 def list_wine_versions():
@@ -50,11 +42,11 @@ def list_wine_versions():
 
 
 def main():
-    read_command_args()
     syslog_tag = args.prefix if args.prefix else 'wine'
     log = logger.logger_init(syslog_tag, args.log_output, args.log_level)
     log.debug("Logger initialized.")
     log.info("Args: {}".format(args))
+    # Load config from file or generate a default one
 
     if not args.winecommand or args.list:
         list_wine_versions()
