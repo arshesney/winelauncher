@@ -7,6 +7,7 @@ import logger
 from args import parser
 
 args = log = None
+wine_env = {}
 
 
 def read_command_args():
@@ -57,6 +58,44 @@ def main():
 
     if not args.winecommand or args.list:
         list_wine_versions()
+
+    # Set the executables to use and populate the environment
+    # check if LD_LIBRARY_PATH is set
+    cur_ld_path = os.environ.get('LD_LIBRARY_PATH', None)
+    # Add the : limiter before the eventual existing variable to avoid
+    # including the current path in LD_LIBRARY_PATH
+    cur_ld_path = ':' + cur_ld_path if cur_ld_path else ""
+    if args.wine_version == "system":
+        wine_base = '/usr'
+        wine_env['PATH'] = os.environ.get('PATH')
+    else:
+        wine_base = args.wine_base
+        wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
+
+    wine_env['WINEPREFIX'] = args.prefix
+    wine_env['WINEVERPATH'] = wine_base
+    wine_env['WINELOADER'] = wine_base + '/bin/wine'
+    wine_env['WINESERVER'] = wine_base + '/bin/wineserver'
+
+    if args.wine_arch == "32":
+        wine_env['WINEARCH'] = 'win32'
+        wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib32 + '/wine'
+        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 \
+            + cur_ld_path
+    else:
+        wine_env['WINEARCH'] = 'win64'
+        wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib64 + '/wine'
+        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' \
+            + wine_base + '/' + args.wine_lib64 + cur_ld_path
+
+    if os.environ.get('LD_PRELOAD'):
+        wine_env['LD_PRELOAD'] = os.environ.get('LD_PRELOAD')
+
+    wine_env['WINEDEBUG'] = os.environ.get('WINEDEBUG', args.wine_debug)
+    wine_env['NINEDEBUG'] = os.environ.get('NINEDEBUG', args.wine_debug)
+
+    logger.info('Enviroment: {}'.format(wine_env))
+    # wine_p = subprocess.Popen()
 
     sys.exit(0)
 

@@ -4,6 +4,7 @@ from systemd import journal
 
 
 def set_log_level(level):
+    """ Convert log level in a readable string """
     set_level = {
         "debug": logging.DEBUG,
         "info": logging.INFO,
@@ -16,6 +17,7 @@ def set_log_level(level):
 
 
 def logger_init(tag, dest, level):
+    """ Initialize the logger """
     logger = logging.getLogger(__name__)
     logger.setLevel(set_log_level(level))
 
