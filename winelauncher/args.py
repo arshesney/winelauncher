@@ -5,7 +5,6 @@ import sys
 
 from textwrap import dedent
 from xdg.BaseDirectory import xdg_config_home, xdg_data_home
-from main import logger
 
 
 def init_config(config_file):
@@ -50,16 +49,16 @@ configfile.add_argument(
     metavar="FILE")
 args, remaining_argv = configfile.parse_known_args()
 
-if config.read(args.configfile):
-    logger.info("Using config from: {}".format(args.configfile))
+if config.read(args.config_file):
+    print("Using config from: {}".format(args.config_file))
 else:
-    logger.info("No config file found, \
-        generating a default one at: {}".format(args.configfile))
-    init_config(args.configfile)
+    print("No config file found, \
+        generating a default one at: {}".format(args.config_file))
+    init_config(args.config_file)
 
 parser = argparse.ArgumentParser(
     description="winelauncher: a WINE wrapper to handle multiple prefixes",
-    parents=configfile,
+    parents=[configfile],
     epilog=dedent("""
         winelauncher will forward LD_PRELOAD, \
         WINEDEBUG and NINEDEBUG environment variables to WINE
@@ -104,4 +103,4 @@ parser.add_argument("--list",
                     action="store_true")
 parser.add_argument("winecommand", nargs='*',
                     help="command to forward to WINE")
-parser.parse_args(remaining_argv)
+args = parser.parse_args(remaining_argv)

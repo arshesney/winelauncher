@@ -4,9 +4,9 @@ import subprocess
 import sys
 import logger
 
-from args import parser, config
+from args import args, config
 
-args = log = None
+log = None
 wine_env = {}
 
 
@@ -83,10 +83,10 @@ def main():
     if os.environ.get('LD_PRELOAD'):
         wine_env['LD_PRELOAD'] = os.environ.get('LD_PRELOAD')
 
-    wine_env['WINEDEBUG'] = os.environ.get('WINEDEBUG', args.wine_debug)
-    wine_env['NINEDEBUG'] = os.environ.get('NINEDEBUG', args.wine_debug)
+    wine_env['WINEDEBUG'] = os.environ.get('WINEDEBUG', config.get('general', 'wine_debug'))
+    wine_env['NINEDEBUG'] = os.environ.get('NINEDEBUG', config.get('general', 'nine_debug'))
 
-    logger.info('Enviroment: {}'.format(wine_env))
+    log.info('Enviroment: {}'.format(wine_env))
     # wine_p = subprocess.Popen()
 
     sys.exit(0)
