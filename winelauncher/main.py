@@ -54,7 +54,7 @@ def main():
     # Set the executables to use and populate the environment
     # check if LD_LIBRARY_PATH is set
     cur_ld_path = os.environ.get('LD_LIBRARY_PATH', None)
-    # Add the : limiter before the eventual existing variable to avoid
+    # Add the : delimiter before the eventual existing variable to avoid
     # including the current path in LD_LIBRARY_PATH
     cur_ld_path = ':' + cur_ld_path if cur_ld_path else ""
     if args.wine_version == "system":
@@ -82,6 +82,12 @@ def main():
 
     if os.environ.get('LD_PRELOAD'):
         wine_env['LD_PRELOAD'] = os.environ.get('LD_PRELOAD')
+
+    if os.environ.get('WINEDLLOVERRIDES'):
+        wine_env['WINEDLLOVERRIDES'] = os.environ.get('WINEDLLOVERRIDES') \
+            + ",winemenubuilder.exe=d"
+    else:
+        wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
 
     wine_env['WINEDEBUG'] = os.environ.get('WINEDEBUG', config.get('general', 'wine_debug'))
     wine_env['NINEDEBUG'] = os.environ.get('NINEDEBUG', config.get('general', 'nine_debug'))
