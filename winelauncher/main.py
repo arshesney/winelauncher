@@ -4,10 +4,11 @@ import subprocess
 import sys
 import logger
 
+from threading import Thread
 from args import args, config
 
 log = None
-wine_env = {}
+wine_env = wine_exec = {}
 
 
 def list_wine_versions():
@@ -41,6 +42,12 @@ def list_wine_versions():
         sys.exit(1)
 
 
+def consume_output(pipe, consume):
+    with pipe:
+        for line in iter(pipe.readline, b''):
+            consume(line)
+
+
 def main():
     syslog_tag = args.prefix if args.prefix else 'wine'
     log = logger.logger_init(syslog_tag, args.log_output, args.log_level)
@@ -64,7 +71,8 @@ def main():
         wine_base = args.wine_base
         wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
 
-    wine_env['WINEPREFIX'] = args.prefix
+    wine_env['WINEPREFIX'] = config.get('general', 'prefix_base') \
+        + "/" + args.prefix
     wine_env['WINEVERPATH'] = wine_base
     wine_env['WINELOADER'] = wine_base + '/bin/wine'
     wine_env['WINESERVER'] = wine_base + '/bin/wineserver'
@@ -89,11 +97,29 @@ def main():
     else:
         wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
 
-    wine_env['WINEDEBUG'] = os.environ.get('WINEDEBUG', config.get('general', 'wine_debug'))
-    wine_env['NINEDEBUG'] = os.environ.get('NINEDEBUG', config.get('general', 'nine_debug'))
+    wine_env['WINEDEBUG'] = os.environ.get(
+        'WINEDEBUG', config.get('general', 'wine_debug'))
+    wine_env['NINEDEBUG'] = os.environ.get(
+        'NINEDEBUG', config.get('general', 'nine_debug'))
 
     log.info('Enviroment: {}'.format(wine_env))
-    # wine_p = subprocess.Popen()
+    wine_exec = args.winecommand
+    wine_exec.insert(0, wine_base + "/bin/wine")
+    log.info('WINE command: {}'.format(wine_exec))
+
+    # Spawn WINE process
+    wine_p = subprocess.Popen(
+        wine_exec,
+        bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=wine_env)
+
+    consume_outs = lambda line: log.info(line)
+    consume_errs = lambda line: log.warn(line)
+    Thread(target=consume_output, args=[wine_p.stdout, consume_outs]).start()
+    Thread(target=consume_output, args=[wine_p.stderr, consume_errs]).start()
+    wine_p.wait()
 
     sys.exit(0)
 
