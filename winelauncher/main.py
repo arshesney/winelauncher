@@ -64,9 +64,9 @@ def main():
     # Add the : delimiter before the eventual existing variable to avoid
     # including the current path in LD_LIBRARY_PATH
     cur_ld_path = ':' + cur_ld_path if cur_ld_path else ""
+    wine_env = os.environ
     if args.wine_version == "system":
         wine_base = '/usr'
-        wine_env['PATH'] = os.environ.get('PATH')
     else:
         wine_base = args.wine_base
         wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
@@ -88,14 +88,11 @@ def main():
         wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' \
             + wine_base + '/' + args.wine_lib64 + cur_ld_path
 
-    if os.environ.get('LD_PRELOAD'):
-        wine_env['LD_PRELOAD'] = os.environ.get('LD_PRELOAD')
-
-    if os.environ.get('WINEDLLOVERRIDES'):
-        wine_env['WINEDLLOVERRIDES'] = os.environ.get('WINEDLLOVERRIDES') \
-            + ",winemenubuilder.exe=d"
-    else:
-        wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
+    # if os.environ.get('WINEDLLOVERRIDES'):
+    #     wine_env['WINEDLLOVERRIDES'] = os.environ.get('WINEDLLOVERRIDES') \
+    #         + ",winemenubuilder.exe=d"
+    # else:
+    #     wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
 
     wine_env['WINEDEBUG'] = os.environ.get(
         'WINEDEBUG', config.get('general', 'wine_debug'))
