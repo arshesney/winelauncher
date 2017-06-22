@@ -112,10 +112,9 @@ def main():
         stderr=subprocess.PIPE,
         env=wine_env)
 
-    consume_outs = lambda line: log.info(line)
-    consume_errs = lambda line: log.warn(line)
-    Thread(target=consume_output, args=[wine_p.stdout, consume_outs]).start()
-    Thread(target=consume_output, args=[wine_p.stderr, consume_errs]).start()
+    consume = lambda line: log.info(line.decode("utf-8"))
+    Thread(target=consume_output, args=[wine_p.stdout, consume]).start()
+    Thread(target=consume_output, args=[wine_p.stderr, consume]).start()
     wine_p.wait()
 
     sys.exit(0)
