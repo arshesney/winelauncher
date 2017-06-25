@@ -18,11 +18,10 @@ def set_log_level(level):
 
 def logger_init(tag, dest, level):
     """ Initialize the logger """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("winelauncher")
     logger.setLevel(set_log_level(level))
 
     if dest == "journal":
-        # FIXME: currently not working, no output to journal
         log_handler = journal.JournalHandler(SYSLOG_IDENTIFIER=tag)
         log_format = logging.Formatter("%(levelname)-8s - %(message)s")
     elif dest == "console":
