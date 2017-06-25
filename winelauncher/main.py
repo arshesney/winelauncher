@@ -101,8 +101,11 @@ def main():
 
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand
-    wine_exec.insert(0, wine_base + "/bin/wine")
-    log.info('WINE command: {}'.format(wine_exec))
+    if wine_exec[0] == "winetricks":
+        log.info('Running winetricks')
+    else:
+        wine_exec.insert(0, wine_base + "/bin/wine")
+        log.info('WINE command: {}'.format(wine_exec))
 
     # Spawn WINE process
     wine_p = subprocess.Popen(
