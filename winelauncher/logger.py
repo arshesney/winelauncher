@@ -26,13 +26,11 @@ def logger_init(tag, dest, level):
         log_format = logging.Formatter("%(levelname)-8s - %(message)s")
     elif dest == "console":
         log_handler = logging.StreamHandler()
-        log_format = logging.Formatter(
-            "%(asctime)s - %(levelname)-8s - %(message)s")
+        log_format = logging.Formatter("%(asctime)s - %(levelname)-8s - %(message)s")
     else:
         try:
             log_handler = logging.FileHandler(dest)
-            log_format = logging.Formatter(
-                "%(asctime)s %(levelname)-8s {} %(message)s".format(tag))
+            log_format = logging.Formatter("%(asctime)s %(levelname)-8s {} %(message)s".format(tag))
         except OSError as err:
             print("Cannot open file {}".format(dest))
             print("OSError: {0}".format(err))

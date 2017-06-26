@@ -5,7 +5,7 @@ import sys
 import logger
 
 from threading import Thread
-from args import args, config
+from args import args, lookup, config, config_section
 
 log = None
 wine_env = wine_exec = {}
@@ -15,8 +15,7 @@ def list_wine_versions():
     """ Find installed WINE versions """
     system_wine = pathlib.Path("/usr/bin/wine")
     if system_wine.is_file():
-        system_wine_version = str(subprocess.check_output(
-            ["/usr/bin/wine", "--version"]), "utf-8")
+        system_wine_version = str(subprocess.check_output(["/usr/bin/wine", "--version"]), "utf-8")
     else:
         system_wine = None
 
@@ -71,8 +70,7 @@ def main():
         wine_base = args.wine_base
         wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
 
-    wine_env['WINEPREFIX'] = config.get('general', 'prefix_base') \
-        + "/" + args.prefix
+    wine_env['WINEPREFIX'] = config.get('common', 'prefix_base') + "/" + args.prefix
     wine_env['WINEVERPATH'] = wine_base
     wine_env['WINELOADER'] = wine_base + '/bin/wine'
     wine_env['WINESERVER'] = wine_base + '/bin/wineserver'
@@ -80,13 +78,11 @@ def main():
     if args.wine_arch == "32":
         wine_env['WINEARCH'] = 'win32'
         wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib32 + '/wine'
-        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 \
-            + cur_ld_path
+        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + cur_ld_path
     else:
         wine_env['WINEARCH'] = 'win64'
         wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib64 + '/wine'
-        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' \
-            + wine_base + '/' + args.wine_lib64 + cur_ld_path
+        wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' + wine_base + '/' + args.wine_lib64 + cur_ld_path
 
     # if os.environ.get('WINEDLLOVERRIDES'):
     #     wine_env['WINEDLLOVERRIDES'] = os.environ.get('WINEDLLOVERRIDES') \
@@ -95,16 +91,16 @@ def main():
     #     wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
 
     wine_env['WINEDEBUG'] = os.environ.get(
-        'WINEDEBUG', config.get('general', 'wine_debug'))
+        'WINEDEBUG', lookup(config, config_section, 'wine_debug'))
     wine_env['NINEDEBUG'] = os.environ.get(
-        'NINEDEBUG', config.get('general', 'nine_debug'))
+        'NINEDEBUG', lookup(config, config_section, 'nine_debug'))
 
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand
-    if wine_exec[0] == "winetricks":
+    if wine_exec[0] == 'winetricks':
         log.info('Running winetricks')
     else:
-        wine_exec.insert(0, wine_base + "/bin/wine")
+        wine_exec.insert(0, wine_base + '/bin/wine')
         log.info('WINE command: {}'.format(wine_exec))
 
     # Spawn WINE process
@@ -115,7 +111,7 @@ def main():
         stderr=subprocess.PIPE,
         env=wine_env)
 
-    consume = lambda line: log.info(line.decode("utf-8"))
+    consume = lambda line: log.info(line.decode('utf-8', 'replace'))
     Thread(target=consume_output, args=[wine_p.stdout, consume]).start()
     Thread(target=consume_output, args=[wine_p.stderr, consume]).start()
     wine_p.wait()
