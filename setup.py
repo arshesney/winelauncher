@@ -13,7 +13,8 @@ config = {
     'install_requires': ['nose'],
     'packages': ['NAME'],
     'scripts': [],
-    'name': 'winelauncher'
+    'name': 'winelauncher',
+    'python_requires': '>=3'
 }
 
 setup(**config)
