@@ -99,6 +99,8 @@ def main():
     wine_env['NINEDEBUG'] = os.environ.get(
         'NINEDEBUG', config.get('general', 'nine_debug'))
 
+    wine_env['STAGING_RT_PRIORITY_SERVER'] = 90
+
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand
     if wine_exec[0] == "winetricks":
