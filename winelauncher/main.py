@@ -1,3 +1,5 @@
+import argparse
+import configparser
 import os
 import pathlib
 import subprocess
@@ -5,11 +7,12 @@ import sys
 import functions
 import logger
 
+from textwrap import dedent
 from threading import Thread
 
 log = None
 wine_env = wine_exec = {}
-
+config = configparser.ConfigParser(default_section='common')
 
 args = Args()
 configfile = argparse.ArgumentParser(

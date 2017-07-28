@@ -1,9 +1,7 @@
-import argparse
-import configparser
-import pathlib
+import subprocess
 import sys
+import pathlib
 
-from textwrap import dedent
 from xdg.BaseDirectory import xdg_config_home, xdg_data_home
 
 
@@ -29,11 +27,11 @@ def init_config(config_file):
 def lookup(config, prefix, option):
     if config.has_option(prefix, option):
         return config.get(prefix, option)
-    else:
+    elif config.has_option('prefix_default', option):
         return config.get('prefix_default', option)
+    else:
+        return None
 
-
-config = configparser.ConfigParser(default_section='common')
 
 # Default config
 config['common'] = {
@@ -55,7 +53,7 @@ config['prefix_default'] = {
 }
 
 
-ef list_wine_versions():
+def list_wine_versions():
     """ Find installed WINE versions """
     system_wine = pathlib.Path("/usr/bin/wine")
     if system_wine.is_file():
