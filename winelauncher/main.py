@@ -90,10 +90,8 @@ def main():
     # else:
     #     wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
 
-    wine_env['WINEDEBUG'] = os.environ.get(
-        'WINEDEBUG', lookup(config, config_section, 'wine_debug'))
-    wine_env['NINEDEBUG'] = os.environ.get(
-        'NINEDEBUG', lookup(config, config_section, 'nine_debug'))
+    for env_var, value in lookup(config, config_section, 'environment'):
+        wine_env[env_var] = os.environ.get(env_var, value)
 
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand
