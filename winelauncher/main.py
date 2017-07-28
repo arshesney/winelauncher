@@ -8,9 +8,9 @@ import sys
 from textwrap import dedent
 from threading import Thread
 from ast import literal_eval
-from xdg.BaseDirectory import xdg_config_home, xdg_data_home
-from functions import *
-from winelog import *
+from xdg.BaseDirectory import xdg_config_home
+from winelauncher.functions import *
+from winelauncher.winelog import *
 
 log = None
 wine_env = wine_exec = config_env = {}

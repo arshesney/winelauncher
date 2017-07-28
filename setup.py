@@ -60,7 +60,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='wine wrapper cli',
+    keywords='wine cli wrapper',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -74,7 +74,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['python-systemd'],
+    install_requires=[],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -103,7 +103,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'winelauncher=winelauncher:main',
+            'winelauncher=winelauncher.main:main',
         ],
     },
 )

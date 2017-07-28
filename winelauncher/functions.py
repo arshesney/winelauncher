@@ -4,12 +4,10 @@ import subprocess
 import sys
 import pathlib
 
-from xdg.BaseDirectory import xdg_config_home, xdg_data_home
-
 config = configparser.ConfigParser(default_section='common')
 # Default config
 config['common'] = {
-    "prefix_base": xdg_data_home + "/wineprefixes",
+    "prefix_base": os.path.expanduser("~") + "/wine",
     "wine_dir": "/opt/wine",
     "wine_lib32": "lib32",
     "wine_lib64": "lib",

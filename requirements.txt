@@ -1,1 +1,2 @@
-systemd-python==233
+systemd-python
+pyxdg
