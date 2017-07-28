@@ -43,10 +43,14 @@ config['common'] = {
     "wine_lib64": "lib",
 }
 config['prefix_default'] = {
-    "wine_debug": "fixme-all",
-    "nine_debug": "fixme-all",
     "log_dest": "console",
     "log_level": "info"
+    "environment": {
+        "WINEDEBUG": "fixme-all",
+        "NINEDEBUG": "fixme-all",
+        "mesa_glthread": "true",
+        "PULSE_LATENCY_MSEC": "60",
+        }
 }
 
 args = Args()
