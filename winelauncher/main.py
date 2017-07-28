@@ -74,7 +74,7 @@ logger.add_argument("--log-output",
 
 # General WINE options
 parser.add_argument("--wine-version",
-                    default='system',
+                    default=None,
                     help="WINE version")
 parser.add_argument("--wine-arch",
                     help="set WINEARCH (32 or 64 bit)",
@@ -105,11 +105,25 @@ def main():
     # including the current path in LD_LIBRARY_PATH
     cur_ld_path = ':' + cur_ld_path if cur_ld_path else ""
     wine_env = os.environ
-    if args.wine_version == "system":
-        wine_base = '/usr'
-    else:
-        wine_base = args.wine_base
+    if args.wine_version:
+        wine_base = args.wine_base + '/' + args.wine_version
+        try:
+            subprocess.check_output([wine_base + "/bin/wine", "--version"])
+        except subprocess.CalledProcessError:
+            print("Unable to find WINE in {}".format(wine_base))
+            sys.exit(1)
         wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
+    elif lookup(config, args.prefix, "wine_version"):
+        wine_base = args.wine_base + '/' + lookup(config, args.prefix, "wine_version")
+        try:
+            subprocess.check_output([wine_base + "/bin/wine", "--version"])
+        except subprocess.CalledProcessError:
+            print("Unable to find WINE in {}".format(wine_base))
+            sys.exit(1)
+        wine_env['PATH'] = wine_base + '/bin:' + os.environ.get('PATH')
+    else:
+        args.wine_version = "system"
+        wine_base = '/usr'
 
     wine_env['WINEPREFIX'] = config.get('common', 'prefix_base') + "/" + args.prefix
     wine_env['WINEVERPATH'] = wine_base

@@ -8,7 +8,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-BASE_PREFIX="$HOME/.local/wineprefixes"
+BASE_PREFIX="$HOME/wine"
 WINEPREFIX="${BASE_PREFIX}/${1}"
 LOGFILE="${WINEPREFIX}/wine.out"
 LOGGER_TAG="${1}"
@@ -24,12 +24,6 @@ else
     wine_path=/usr
 fi
 
-if [[ -n $WINEDLLOVERRIDES ]]; then
-    WINEDLLOVERRIDES="${WINEDLLOVERRIDES,winemenubuilder.exe=d}"
-else
-    WINEDLLOVERRIDES=winemenubuilder.exe=d
-fi
-
 PATH=$wine_path/bin:$PATH
 LD_LIBRARY_PATH="$wine_path/lib:$LD_LIBRARY_PATH"
 WINEDLLPATH=$wine_path/lib/wine
@@ -42,15 +36,16 @@ WINEVERPATH=$wine_path
 WINESERVER=$wine_path/bin/wineserver
 WINELOADER=$wine_path/bin/wine
 
-#if [ -z ${WINEDEBUG} ]; then
-#    WINEDEBUG="-all"
-#fi
-#if [ -z ${NINEDEBUG} ]; then
-#    NINEDEBUG="-all"
-#fi
+if [ -z ${WINEDEBUG} ]; then
+    WINEDEBUG="fixme-all"
+fi
+if [ -z ${NINEDEBUG} ]; then
+    NINEDEBUG="fixme-all"
+fi
 
-#export PATH LD_LIBRARY_PATH WINEVERPATH WINEPREFIX WINEARCH WINESERVER WINELOADER WINEDLLPATH WINEDEBUG NINEDEBUG WINEDLLOVERRIDES
-WINE_ENV="PATH=${PATH} LD_LIBRARY_PATH=${LD_LIBRARY_PATH} WINEVERPATH=${WINEVERPATH} WINEPREFIX=${WINEPREFIX} WINEARCH=${WINEARCH} WINESERVER=${WINESERVER} WINELOADER=${WINELOADER} WINEDLLPATH=${WINEDLLPATH} WINEDEBUG=${WINEDEBUG} NINEDEBUG=${NINEDEBUG} WINEDLLOVERRIDES=${WINEDLLOVERRIDES}"
+export PATH LD_LIBRARY_PATH WINEVERPATH WINEPREFIX WINEARCH WINESERVER WINELOADER WINEDLLPATH WINEDEBUG NINEDEBUG mesa_glthread=true PULSE_LATENCY_MSEC=60
+#STAGING_RT_PRIORITY_SERVER=90
+#WINE_ENV="PATH=${PATH} LD_LIBRARY_PATH=${LD_LIBRARY_PATH} WINEVERPATH=${WINEVERPATH} WINEPREFIX=${WINEPREFIX} WINEARCH=${WINEARCH} WINESERVER=${WINESERVER} WINELOADER=${WINELOADER} WINEDLLPATH=${WINEDLLPATH} WINEDEBUG=${WINEDEBUG} NINEDEBUG=${NINEDEBUG} __GL_THREADED_OPTIMIZATIONS=1 STAGING_RT_PRIORITY_SERVER=90"
 
 if [ -z ${LD_PRELOAD} ]; then
     WINE_ENV="LD_PRELOAD=${LD_PRELOAD} ${WINE_ENV}"
@@ -63,13 +58,14 @@ if [ "${1}" == "winetricks" ]; then
 elif
     [ "${1}" == "export-steam" ]; then
     shift
-    /bin/sh -c "$WINE_ENV regedit -E ~/Documenti/steam.reg HKEY_LOCAL_MACHINE\\\\Software\\\\Valve"
+    /bin/sh -c "$WINE_ENV regedit -E ~/wine/steam.reg HKEY_LOCAL_MACHINE\\\\Software\\\\Valve"
 elif
     [ "${1}" == "import-steam" ]; then
     shift
-    /bin/sh -c "$WINE_ENV regedit ~/Documenti/steam.reg"
+    /bin/sh -c "$WINE_ENV regedit ~/wine/steam.reg"
 else
-    sudo ip netns exec wine sudo -u ${USER} $WINE_ENV $WINELOADER "${@}" 2>&1 | logger -t ${LOGGER_TAG}
+    #sudo ip netns exec wine sudo -u ${USER} $WINE_ENV $WINELOADER "${@}" 2>&1 | logger -t ${LOGGER_TAG}
+    $WINELOADER "${@}" 2>&1 | logger -t ${LOGGER_TAG}
 fi
 
 exit 0

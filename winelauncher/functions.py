@@ -74,7 +74,7 @@ def list_wine_versions(wine_base):
             print("No system-wine WINE found\n")
 
         if wine_versions_list:
-            print("WINE versions available in {}:\n\n".format(wine_base))
+            print("WINE versions available in {}:\n".format(wine_base))
             for winedir in wine_versions_list:
                 print("\t{}".format(winedir))
         else:
