@@ -4,15 +4,16 @@ import os
 import pathlib
 import subprocess
 import sys
-import functions
-import logger
 
 from textwrap import dedent
 from threading import Thread
+from ast import literal_eval
+from xdg.BaseDirectory import xdg_config_home, xdg_data_home
+from functions import *
+from winelog import *
 
 log = None
-wine_env = wine_exec = {}
-config = configparser.ConfigParser(default_section='common')
+wine_env = wine_exec = config_env = {}
 
 args = Args()
 configfile = argparse.ArgumentParser(
@@ -26,7 +27,7 @@ configfile.add_argument(
     metavar="FILE")
 configfile.add_argument("--prefix",
                         help="WINEPREFIX name",
-                        default=None)
+                        default="")
 args, remaining_argv = configfile.parse_known_args(namespace=args)
 
 if config.read(args.config_file):
@@ -88,13 +89,14 @@ parser.parse_args(remaining_argv, namespace=args)
 
 def main():
     syslog_tag = args.prefix if args.prefix else 'wine'
-    log = logger.logger_init(syslog_tag, args.log_output, args.log_level)
+    log = logger_init(syslog_tag, args.log_output, args.log_level)
     log.debug("Logger initialized.")
     log.info("Args: {}".format(args))
     # Load config from file or generate a default one
 
     if not args.winecommand or args.list:
-        list_wine_versions()
+        list_wine_versions(args.wine_base)
+        sys.exit(0)
 
     # Set the executables to use and populate the environment
     # check if LD_LIBRARY_PATH is set
@@ -123,14 +125,10 @@ def main():
         wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib64 + '/wine'
         wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' + wine_base + '/' + args.wine_lib64 + cur_ld_path
 
-    # if os.environ.get('WINEDLLOVERRIDES'):
-    #     wine_env['WINEDLLOVERRIDES'] = os.environ.get('WINEDLLOVERRIDES') \
-    #         + ",winemenubuilder.exe=d"
-    # else:
-    #     wine_env['WINEDLLOVERRIDES'] = "winemenubuilder.exe=d"
-
-    for env_var, value in lookup(config, config_section, 'environment'):
-        wine_env[env_var] = os.environ.get(env_var, value)
+    config_env = literal_eval(lookup(config, config_section, 'environment'))
+    if config_env:
+        for env_var, value in config_env.items():
+            wine_env[env_var] = os.environ.get(env_var, value)
 
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand

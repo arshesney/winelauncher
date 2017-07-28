@@ -1,8 +1,30 @@
+import configparser
+import os
 import subprocess
 import sys
 import pathlib
 
 from xdg.BaseDirectory import xdg_config_home, xdg_data_home
+
+config = configparser.ConfigParser(default_section='common')
+# Default config
+config['common'] = {
+    "prefix_base": xdg_data_home + "/wineprefixes",
+    "wine_dir": "/opt/wine",
+    "wine_lib32": "lib32",
+    "wine_lib64": "lib",
+}
+config['prefix_default'] = {
+    "log_dest": "console",
+    "log_level": "info",
+    "environment": {
+        "WINEDEBUG": "fixme-all",
+        "NINEDEBUG": "fixme-all",
+        "mesa_glthread": "true",  # Enable OpenGL multithread
+        "PULSE_LATENCY_MSEC": "60",  # Fix for crackling audio
+        "FREETYPE_PROPERTIES": "truetype:interpreter-version=35",  # Fix for ugly fonts
+    }
+}
 
 
 class Args:
@@ -26,34 +48,15 @@ def init_config(config_file):
 
 def lookup(config, prefix, option):
     if config.has_option(prefix, option):
-        return config.get(prefix, option)
+        config_value = config.get(prefix, option)
     elif config.has_option('prefix_default', option):
-        return config.get('prefix_default', option)
+        config_value = config.get('prefix_default', option)
     else:
-        return None
+        config_value = None
+    return config_value
 
 
-# Default config
-config['common'] = {
-    "prefix_base": xdg_data_home + "/wineprefixes",
-    "wine_dir": "/opt/wine",
-    "wine_lib32": "lib32",
-    "wine_lib64": "lib",
-}
-config['prefix_default'] = {
-    "log_dest": "console",
-    "log_level": "info"
-    "environment": {
-        "WINEDEBUG": "fixme-all",
-        "NINEDEBUG": "fixme-all",
-        "mesa_glthread": "true", # Enable OpenGL multithread
-        "PULSE_LATENCY_MSEC": "60", # Fix for crackling audio
-        "FREETYPE_PROPERTIES": "truetype:interpreter-version=35", # Fix for ugly fonts
-        }
-}
-
-
-def list_wine_versions():
+def list_wine_versions(wine_base):
     """ Find installed WINE versions """
     system_wine = pathlib.Path("/usr/bin/wine")
     if system_wine.is_file():
@@ -61,8 +64,8 @@ def list_wine_versions():
     else:
         system_wine = None
 
-    if pathlib.Path(args.wine_base).exists():
-        wine_versions_list = os.listdir(args.wine_base)
+    if pathlib.Path(wine_base).exists():
+        wine_versions_list = os.listdir(wine_base)
     else:
         wine_versions_list = None
 
@@ -73,7 +76,7 @@ def list_wine_versions():
             print("No system-wine WINE found\n")
 
         if wine_versions_list:
-            print("WINE versions available in {}:\n\n".format(args.wine_base))
+            print("WINE versions available in {}:\n\n".format(wine_base))
             for winedir in wine_versions_list:
                 print("\t{}".format(winedir))
         else:
