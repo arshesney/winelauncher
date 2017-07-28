@@ -48,8 +48,9 @@ config['prefix_default'] = {
     "environment": {
         "WINEDEBUG": "fixme-all",
         "NINEDEBUG": "fixme-all",
-        "mesa_glthread": "true",
-        "PULSE_LATENCY_MSEC": "60",
+        "mesa_glthread": "true", # Enable OpenGL multithread
+        "PULSE_LATENCY_MSEC": "60", # Fix for crackling audio
+        "FREETYPE_PROPERTIES": "truetype:interpreter-version=35", # Fix for ugly fonts
         }
 }
 

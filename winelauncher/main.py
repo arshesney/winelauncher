@@ -95,11 +95,6 @@ def main():
     wine_env['NINEDEBUG'] = os.environ.get(
         'NINEDEBUG', lookup(config, config_section, 'nine_debug'))
 
-    # Fix for ugly fonts
-    wine_env['FREETYPE_PROPERTIES'] = "truetype:interpreter-version=35"
-
-    wine_env['STAGING_RT_PRIORITY_SERVER'] = 90
-
     log.info('Enviroment: {}'.format(wine_env))
     wine_exec = args.winecommand
     if wine_exec[0] == 'winetricks':
