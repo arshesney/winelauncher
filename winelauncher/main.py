@@ -2,49 +2,85 @@ import os
 import pathlib
 import subprocess
 import sys
+import functions
 import logger
 
 from threading import Thread
-from args import args, lookup, config, config_section
 
 log = None
 wine_env = wine_exec = {}
 
 
-def list_wine_versions():
-    """ Find installed WINE versions """
-    system_wine = pathlib.Path("/usr/bin/wine")
-    if system_wine.is_file():
-        system_wine_version = str(subprocess.check_output(["/usr/bin/wine", "--version"]), "utf-8")
-    else:
-        system_wine = None
+args = Args()
+configfile = argparse.ArgumentParser(
+    description=__doc__,
+    add_help=False)
+configfile.add_argument(
+    "-c", "--config",
+    help="alternate config file",
+    default=xdg_config_home + "/winelauncher.conf",
+    dest='config_file',
+    metavar="FILE")
+configfile.add_argument("--prefix",
+                        help="WINEPREFIX name",
+                        default=None)
+args, remaining_argv = configfile.parse_known_args(namespace=args)
 
-    if pathlib.Path(args.wine_base).exists():
-        wine_versions_list = os.listdir(args.wine_base)
-    else:
-        wine_versions_list = None
+if config.read(args.config_file):
+    print("Using config from: {}".format(args.config_file))
+else:
+    print("No config file found, generating a default one at: {}".format(args.config_file))
+    init_config(args.config_file)
 
-    if system_wine or wine_versions_list:
-        if system_wine:
-            print("System WINE version:\n\t{}".format(system_wine_version))
-        else:
-            print("No system-wine WINE found\n")
+if config.has_section(args.prefix):
+    config_section = args.prefix
+else:
+    config_section = 'prefix_default'
 
-        if wine_versions_list:
-            print("WINE versions available in {}:\n\n".format(args.wine_base))
-            for winedir in wine_versions_list:
-                print("\t{}".format(winedir))
-        else:
-            print("No additional WINE installs available")
-    else:
-        print("No WINE found")
-        sys.exit(1)
+parser = argparse.ArgumentParser(
+    description="winelauncher: a WINE wrapper to handle multiple prefixes",
+    parents=[configfile],
+    epilog=dedent("""
+        winelauncher will forward LD_PRELOAD, WINEDEBUG and NINEDEBUG environment variables to WINE
+        """))
 
+# WINE and prefixes locations
+general = parser.add_argument_group("WINE options")
+general.add_argument("--prefix-base",
+                     default=config.get('common', 'prefix_base'),
+                     help="prefixes base directory")
+general.add_argument("--wine-base",
+                     default=config.get('common', 'wine_dir'),
+                     help="set WINE base directory")
+general.add_argument("--wine-lib32",
+                     default=config.get('common', 'wine_lib32'),
+                     help="lib directory for 32 bit libraries")
+general.add_argument("--wine-lib64",
+                     default=config.get('common', 'wine_lib64'),
+                     help="lib directory for 64 bit libraries")
 
-def consume_output(pipe, consume):
-    with pipe:
-        for line in iter(pipe.readline, b''):
-            consume(line)
+# Logger options
+logger = parser.add_argument_group("Logger options")
+logger.add_argument("--log-level",
+                    default=lookup(config, config_section, 'log_level'),
+                    help="set log level")
+logger.add_argument("--log-output",
+                    default=lookup(config, config_section, 'log_dest'),
+                    help="output to log file (or journal)")
+
+# General WINE options
+parser.add_argument("--wine-version",
+                    default='system',
+                    help="WINE version")
+parser.add_argument("--wine-arch",
+                    help="set WINEARCH (32 or 64 bit)",
+                    choices=["32", "64"])
+parser.add_argument("--list",
+                    help="list WINE versions available",
+                    action="store_true")
+parser.add_argument("winecommand", nargs='*',
+                    help="command to forward to WINE")
+parser.parse_args(remaining_argv, namespace=args)
 
 
 def main():
