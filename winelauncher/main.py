@@ -42,7 +42,7 @@ else:
     config_section = 'prefix_default'
 
 parser = argparse.ArgumentParser(
-    description="winelauncher: a WINE wrapper to handle multiple prefixes",
+    description="winelauncher: command line WINE wrapper",
     parents=[configfile],
     epilog=dedent("""
         winelauncher will forward LD_PRELOAD, WINEDEBUG and NINEDEBUG environment variables to WINE
@@ -55,7 +55,7 @@ general.add_argument("--prefix-base",
                      help="prefixes base directory")
 general.add_argument("--wine-base",
                      default=config.get('common', 'wine_dir'),
-                     help="set WINE base directory")
+                     help="WINE installation base directory")
 general.add_argument("--wine-lib32",
                      default=config.get('common', 'wine_lib32'),
                      help="lib directory for 32 bit libraries")
@@ -70,20 +70,20 @@ logger.add_argument("--log-level",
                     help="set log level")
 logger.add_argument("--log-output",
                     default=lookup(config, config_section, 'log_dest'),
-                    help="output to log file (or journal)")
+                    help="log messages detination")
 
 # General WINE options
 parser.add_argument("--wine-version",
                     default=None,
-                    help="WINE version")
+                    help="WINE version to use")
 parser.add_argument("--wine-arch",
-                    help="set WINEARCH (32 or 64 bit)",
+                    help="WINEARCH to use",
                     choices=["32", "64"])
 parser.add_argument("--list",
                     help="list WINE versions available",
                     action="store_true")
 parser.add_argument("winecommand", nargs='*',
-                    help="command to forward to WINE")
+                    help="command to execute with WINE")
 parser.parse_args(remaining_argv, namespace=args)
 
 
