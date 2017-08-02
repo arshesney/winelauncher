@@ -120,9 +120,9 @@ Command line arguments always override the configuration file.
 
 ##### Examples
 ```
-$ winelauncher --prefix mybottle c:\\windows\\system32\\notepad.exe
+$ winelauncher --prefix mybottle --log-output console c:\\windows\\system32\\notepad.exe
 
 $ winelauncher --prefix otherbottle winetricks vcrun2010
 
-$ winelauncher --prefix steam c:\\Steam\\Steam.exe -- -no-cef-sandbox
+$ winelauncher --prefix steam --wine-version 2.12-staging-nine c:\\Steam\\Steam.exe -- -no-cef-sandbox
 ```
