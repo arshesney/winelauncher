@@ -26,11 +26,12 @@ config['prefix_default'] = {
 
 
 class Args:
+    """Container for command line arguments"""
     pass
 
 
 def init_config(config_file):
-    """ Check if config file exists, otherwise generate a default one """
+    """Check if config file exists, otherwise generate a default one"""
     if pathlib.Path(config_file) and config.read(config_file):
         print("Using configuration from {}".format(config_file))
     else:
@@ -45,6 +46,7 @@ def init_config(config_file):
 
 
 def lookup(config, prefix, option):
+    """Check if the config options is specified for the prefix, then in defaults"""
     if config.has_option(prefix, option):
         config_value = config.get(prefix, option)
     elif config.has_option('prefix_default', option):
@@ -55,7 +57,7 @@ def lookup(config, prefix, option):
 
 
 def list_wine_versions(wine_base):
-    """ Find installed WINE versions """
+    """Find installed WINE versions"""
     system_wine = pathlib.Path("/usr/bin/wine")
     if system_wine.is_file():
         system_wine_version = str(subprocess.check_output(["/usr/bin/wine", "--version"]), "utf-8")
@@ -85,6 +87,7 @@ def list_wine_versions(wine_base):
 
 
 def consume_output(pipe, consume):
+    """Get subprocess' output"""
     with pipe:
         for line in iter(pipe.readline, b''):
             consume(line)
