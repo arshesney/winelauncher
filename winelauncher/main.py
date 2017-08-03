@@ -78,7 +78,8 @@ parser.add_argument("--wine-version",
                     help="WINE version to use")
 parser.add_argument("--wine-arch",
                     help="WINEARCH to use",
-                    choices=["32", "64"])
+                    choices=["32", "64"],
+                    default=lookup(config, config_section, 'wine_arch'))
 parser.add_argument("--list",
                     help="list WINE versions available",
                     action="store_true")
@@ -134,7 +135,7 @@ def main():
         wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib32 + '/wine'
         wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + cur_ld_path
     else:
-        wine_env['WINEARCH'] = 'win64'
+        #wine_env['WINEARCH'] = 'win64'
         wine_env['WINEDLLPATH'] = wine_base + '/' + args.wine_lib64 + '/wine'
         wine_env['LD_LIBRARY_PATH'] = wine_base + '/' + args.wine_lib32 + ':' + wine_base + '/' + args.wine_lib64 + cur_ld_path
 
